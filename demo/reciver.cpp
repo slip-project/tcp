@@ -61,13 +61,16 @@ int main(int argc, char const *argv[]) {
             struct tcphdr *tcph = (struct tcphdr *) (datagram + sizeof(struct ip));
             char *data = (char *) (datagram + sizeof(ip) + sizeof(struct tcphdr));
 
+
             #ifdef __APPLE__ // macOS
+            printf("sender ip: %s\n", inet_ntoa(iphd->ip_src));
 
             printf("source port: %hu\n", ntohs(tcph->th_sport));
             printf("destination port: %hu\n", ntohs(tcph->th_dport));
             printf("sequence number: %hu\n", ntohs(tcph->th_seq));
 
             #elif __linux__ // linux
+            printf("sender ip: %s\n", inet_ntoa(iphd->ip_src));
 
             printf("source port: %hu\n", ntohs(tcph->source));
             printf("destination port: %hu\n", ntohs(tcph->dest));
