@@ -18,9 +18,11 @@
 
 void print(void *buf, int length) {
     char *bp = (char *) buf;
-    for (int i = 0; i < length; ++i)
-        putchar( isprint(bp[i]) ? bp[i] : '.' );
-    putchar('\n');
+    for (int i = 0; i < length; ++i) {
+      int val = bp[i];
+      std::cout << std::hex << val;
+    }
+    std::cout << std::dec << std::endl;
 }
 
 slip::Udp::Udp() {
@@ -86,12 +88,14 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   udph->dest = destaddr.sin_port;
   udph->len = htons(8 + data.length()); //udp header size
   // calculate checksum
+  std::cout << "send" << std::endl;
+  std::cout << inet_ntoa(sourceaddr.sin_addr) << " " << inet_ntoa(destaddr.sin_addr) << std::endl;
+  print(datagram, payload_len);
   udph->check = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, payload, payload_len);
+  std::cout << "checksum: " << udph->check << std::endl;
 
   #endif
 
-  std::cout << sourceaddr.sin_addr.s_addr << destaddr.sin_addr.s_addr << std::endl;
-  print(datagram, payload_len);
 
   return sendto(_socketfd, datagram, payload_len, 0, (struct sockaddr *) &destaddr, destaddr_len);
 }
@@ -146,10 +150,11 @@ void slip::Udp::receive_loop() {
 
       bool verify = slip::verify_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip), checksum);
 
-      std::cout << checksum << std::endl;
-      std::cout << slip::calc_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip)) << std::endl;
-      std::cout << iphd->ip_src.s_addr << iphd->ip_dst.s_addr << std::endl;
+      std::cout << "receive" << std::endl;
+      std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
       print((char*)udph, tot_len - sizeof(struct ip));
+      std::cout << "receive checksum: " << checksum << std::endl;
+      std::cout << "calculate checksum: " << slip::calc_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip)) << std::endl;
 
       if (verify) {
 
