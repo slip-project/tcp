@@ -16,15 +16,6 @@
 
 #include <iostream>
 
-void print(void *buf, int length) {
-    char *bp = (char *) buf;
-    for (int i = 0; i < length; ++i) {
-      int val = bp[i];
-      std::cout << std::hex << val;
-    }
-    std::cout << std::dec << std::endl;
-}
-
 slip::Udp::Udp() {
   _finish = false;
   _socketfd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
@@ -91,7 +82,6 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   std::cout << "send" << std::endl;
   std::cout << (sourceaddr.sin_addr.s_addr) << " " << (destaddr.sin_addr.s_addr) << std::endl;
   std::cout << inet_ntoa(sourceaddr.sin_addr) << " " << inet_ntoa(destaddr.sin_addr) << std::endl;
-  print(datagram, payload_len);
   udph->check = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, payload, payload_len);
   std::cout << "checksum: " << udph->check << std::endl;
 
@@ -154,7 +144,6 @@ void slip::Udp::receive_loop() {
       std::cout << "receive" << std::endl;
       std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
       std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
-      print((char*)udph, tot_len - sizeof(struct ip));
       std::cout << "receive checksum: " << checksum << std::endl;
       std::cout << "calculate checksum: " << slip::calc_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip)) << std::endl;
 
