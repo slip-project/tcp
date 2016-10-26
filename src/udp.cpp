@@ -70,7 +70,7 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   udph->uh_dport = destaddr.sin_port;
   udph->uh_ulen = htons(8 + data.length()); //udp header size
   // calculate checksum
-  udph->uh_sum = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, payload, payload_len);
+  udph->uh_sum = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, datagram, payload_len);
 
   #elif __linux__ // linux
 
@@ -82,7 +82,7 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   std::cout << "send" << std::endl;
   std::cout << (sourceaddr.sin_addr.s_addr) << " " << (destaddr.sin_addr.s_addr) << std::endl;
   std::cout << inet_ntoa(sourceaddr.sin_addr) << " " << inet_ntoa(destaddr.sin_addr) << std::endl;
-  udph->check = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, payload, payload_len);
+  udph->check = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, datagram, payload_len);
   std::cout << "checksum: " << udph->check << std::endl;
 
   #endif
