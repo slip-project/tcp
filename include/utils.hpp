@@ -22,7 +22,7 @@ namespace slip {
   bool verify_checksum(unsigned long source_ip, unsigned long dest_ip, u_int8_t protocol,
                        char* payload, unsigned short payload_len, unsigned short checksum);
 
-  std::string local_ip = "";
+  extern std::string local_ip;
 
   std::string get_local_ip();
 

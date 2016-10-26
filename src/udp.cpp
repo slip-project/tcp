@@ -2,7 +2,9 @@
 #include "utils.hpp"
 #include <cctype>
 #include <cstring> //memset
+#include <stdexcept>
 #include <sys/socket.h>  //for socket ofcourse
+#include <unistd.h>
 #include <stdlib.h> //for exit(0);
 #include <errno.h> //For errno - the error number
 #include <netinet/udp.h> //Provides declarations for tcp header
@@ -12,9 +14,21 @@
 
 #define DATAGRAM_MAX_LEN 4096
 
+#include <iostream>
+
+void print(void *buf, int length) {
+    char *bp = (char *) buf;
+    for (int i = 0; i < length; ++i)
+        putchar( isprint(bp[i]) ? bp[i] : '.' );
+    putchar('\n');
+}
+
 slip::Udp::Udp() {
   _finish = false;
   _socketfd = socket(AF_INET, SOCK_RAW, IPPROTO_UDP);
+  if (_socketfd < 0) {
+    throw std::runtime_error("create socket failed");
+  }
   _recive_thread = std::thread(&Udp::receive_loop, this);
 }
 
@@ -26,7 +40,7 @@ slip::Udp::~Udp() {
 
 int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned short source_port, std::string data) {
   //Datagram to represent the packet
-  char datagram[DATAGRAM_MAX_LEN] , *payload , *pseudogram;
+  char datagram[DATAGRAM_MAX_LEN], *payload;
   std::string source_ip = slip::get_local_ip();
 
   //zero out the packet buffer
@@ -36,7 +50,6 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   struct udphdr *udph = (struct udphdr *) (datagram);
 
   struct sockaddr_in destaddr, sourceaddr;
-  struct pseudo_header psh;
 
   //Address config
   destaddr.sin_family = AF_INET;
@@ -49,10 +62,11 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   sourceaddr.sin_port = htons(source_port); // 本机端口
   sourceaddr.sin_addr.s_addr = inet_addr(source_ip.c_str()); // 本机ip
 
-  socklen_t sourceaddr_len = sizeof(sourceaddr);
+  // socklen_t sourceaddr_len = sizeof(sourceaddr);
 
   //Data part
   unsigned short payload_len = strlen(data.c_str()) + sizeof(struct udphdr);
+  // std::cout << payload_len << std::endl;
   payload = datagram + sizeof(struct udphdr);
   strcpy(payload, data.c_str());
 
@@ -76,12 +90,15 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
 
   #endif
 
+  std::cout << sourceaddr.sin_addr.s_addr << destaddr.sin_addr.s_addr << std::endl;
+  print(datagram, payload_len);
+
   return sendto(_socketfd, datagram, payload_len, 0, (struct sockaddr *) &destaddr, destaddr_len);
 }
 
 slip::Udp::listener_ptr slip::Udp::add_listener(unsigned short port, slip::Udp::listener func) {
-  _table[port].push_back(func);
-  return _table[port].cend();
+  _table[port].push_front(func);
+  return _table[port].begin();
 }
 
 bool slip::Udp::remove_listener(unsigned short port, slip::Udp::listener_ptr ptr) {
@@ -99,7 +116,7 @@ void slip::Udp::receive_loop() {
   socklen_t sourceaddr_len = sizeof(sourceaddr);
 
   if (bind(_socketfd, (struct sockaddr *) &sourceaddr, sourceaddr_len) < 0) {
-      perror("bind failed");
+      throw std::runtime_error("bind failed");
   }
 
   int tot_len;
@@ -112,29 +129,53 @@ void slip::Udp::receive_loop() {
       struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
       char *data = (char *) (datagram + sizeof(ip) + sizeof(struct udphdr));
 
-      //
-      // TODO: should verify checksum here
-      //
-
-      std::string source_ip = std::string(inet_ntoa(iphd->ip_src));
-      std::string data_str = std::string(data, tot_len - sizeof(ip) + sizeof(struct udphdr));
+      // std::cout << tot_len - sizeof(struct ip) << std::endl;
+      // std::cout << udph->check << std::endl;
 
       #ifdef __APPLE__ // macOS
 
-      unsigned short source_port = ntohs(udph->uh_sport);
-      unsigned short dest_port = ntohs(udph->uh_dport);
+      unsigned short checksum = udph->uh_sum;
+      udph->uh_sum = 0;
 
       #elif __linux__ // linux
 
-      unsigned short source_port = ntohs(udph->source);
-      unsigned short dest_port = ntohs(udph->dest);
+      unsigned short checksum = udph->check;
+      udph->uh_sum = 0;
 
       #endif
 
-      for (auto it = _table[dest_port].begin(); it != _table[dest_port].end(); ++it) {
-        (*it)(source_ip, source_port, data_str);
-      }
+      bool verify = slip::verify_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip), checksum);
 
+      std::cout << checksum << std::endl;
+      std::cout << slip::calc_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip)) << std::endl;
+      std::cout << iphd->ip_src.s_addr << iphd->ip_dst.s_addr << std::endl;
+      print((char*)udph, tot_len - sizeof(struct ip));
+
+      if (verify) {
+
+        std::string source_ip = std::string(inet_ntoa(iphd->ip_src));
+        std::string data_str = std::string(data, tot_len - sizeof(struct ip) - sizeof(struct udphdr));
+
+        #ifdef __APPLE__ // macOS
+
+        unsigned short source_port = ntohs(udph->uh_sport);
+        unsigned short dest_port = ntohs(udph->uh_dport);
+
+        #elif __linux__ // linux
+
+        unsigned short source_port = ntohs(udph->source);
+        unsigned short dest_port = ntohs(udph->dest);
+
+        #endif
+
+        for (auto it = _table[dest_port].begin(); it != _table[dest_port].end(); ++it) {
+          (*it)(source_ip, source_port, data_str);
+        }
+
+      } else {
+        // valid checksum
+        std::cout << "valid checksum" << std::endl;
+      }
     }
   }
 

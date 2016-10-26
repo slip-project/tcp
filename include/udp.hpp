@@ -15,9 +15,9 @@ public:
 
   typedef std::function<void(std::string, unsigned short, std::string)> listener;
 
-  typedef std::list<listener>::const_iterator listener_ptr;
+  typedef std::list<listener>::iterator listener_ptr;
 
-  typedef std::map<unsigned short, std::list<listener>> listener_table;
+  typedef std::map<unsigned short, std::list<listener> > listener_table;
 
   Udp();
 

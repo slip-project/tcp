@@ -60,9 +60,11 @@ bool slip::verify_checksum(unsigned long source_ip, unsigned long dest_ip, u_int
   unsigned short sum = calc_checksum(source_ip, dest_ip, protocol, payload, payload_len);
   sum += checksum;
 
-  return (checksum + 1) == 0;
+  return (sum + 1) == 0;
 
 }
+
+std::string slip::local_ip = "";
 
 std::string slip::get_local_ip() {
 
@@ -75,7 +77,17 @@ std::string slip::get_local_ip() {
   getifaddrs(&ifAddrStruct);
 
   for (ifa = ifAddrStruct; ifa != NULL; ifa = ifa->ifa_next) {
-    if ("en0" == ifa->ifa_name && ifa->ifa_addr) {
+
+    #ifdef __APPLE__ // macOS
+
+    if (std::string(ifa->ifa_name) == "en0" && ifa->ifa_addr) {
+
+    #elif __linux__ //linux
+
+    if (std::string(ifa->ifa_name) == "eth0" && ifa->ifa_addr) {
+
+    #endif
+
       if (ifa->ifa_addr->sa_family == AF_INET) { // check it is IP4
           // is a valid IP4 Address
           tmpAddrPtr=&((struct sockaddr_in *)ifa->ifa_addr)->sin_addr;
