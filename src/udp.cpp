@@ -130,12 +130,10 @@ void slip::Udp::receive_loop() {
       #ifdef __APPLE__ // macOS
 
       unsigned short checksum = udph->uh_sum;
-      udph->uh_sum = 0;
 
       #elif __linux__ // linux
 
       unsigned short checksum = udph->check;
-      udph->uh_sum = 0;
 
       #endif
 
@@ -145,7 +143,6 @@ void slip::Udp::receive_loop() {
       std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
       std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
       std::cout << "receive checksum: " << checksum << std::endl;
-      std::cout << "calculate checksum: " << slip::calc_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip)) << std::endl;
 
       if (verify) {
 
@@ -170,7 +167,7 @@ void slip::Udp::receive_loop() {
 
       } else {
         // valid checksum
-        std::cout << "valid checksum" << std::endl;
+        std::cout << "invalid checksum" << std::endl;
       }
     }
   }

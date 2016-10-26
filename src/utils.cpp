@@ -75,9 +75,10 @@ bool slip::verify_checksum(unsigned long source_ip, unsigned long dest_ip, u_int
                      char* payload, unsigned short payload_len, unsigned short checksum) {
 
   unsigned short sum = calc_checksum(source_ip, dest_ip, protocol, payload, payload_len);
-  sum += checksum;
 
-  return (sum + 1) == 0;
+  std::cout << "verify_checksum: " << sum << std::endl;
+
+  return sum == 0;
 
 }
 
