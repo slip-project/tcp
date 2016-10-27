@@ -30,25 +30,25 @@ unsigned short slip::csum(unsigned short *ptr, int nbytes) {
   return answer;
 }
 
-#include <iostream>
+// #include <iostream>
 
-void print(void *buf, int length) {
-    char *bp = (char *) buf;
-    for (int i = 0; i < length; ++i) {
-      int val = bp[i];
-      std::cout << std::hex << val;
-    }
-    std::cout << std::dec << std::endl;
-}
+// void print(void *buf, int length) {
+//     char *bp = (char *) buf;
+//     for (int i = 0; i < length; ++i) {
+//       int val = bp[i];
+//       std::cout << std::hex << val;
+//     }
+//     std::cout << std::dec << std::endl;
+// }
 
 unsigned short slip::calc_checksum(unsigned long source_ip, unsigned long dest_ip, u_int8_t protocol,
                              char* payload, unsigned short payload_len) {
 
-  std::cout << source_ip << std::endl;
-  std::cout << dest_ip << std::endl;
-  std::cout << protocol << std::endl;
-  print(payload, payload_len);
-  std::cout << payload_len << std::endl;
+  // std::cout << source_ip << std::endl;
+  // std::cout << dest_ip << std::endl;
+  // std::cout << protocol << std::endl;
+  // print(payload, payload_len);
+  // std::cout << payload_len << std::endl;
 
   pseudo_header psh;
 
@@ -76,7 +76,7 @@ bool slip::verify_checksum(unsigned long source_ip, unsigned long dest_ip, u_int
 
   unsigned short sum = calc_checksum(source_ip, dest_ip, protocol, payload, payload_len);
 
-  std::cout << "verify_checksum: " << sum << std::endl;
+  // std::cout << "verify_checksum: " << sum << std::endl;
 
   return sum == 0;
 

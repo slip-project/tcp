@@ -35,6 +35,7 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   //Datagram to represent the packet
   char datagram[DATAGRAM_MAX_LEN], *payload;
   std::string source_ip = slip::get_local_ip();
+  // std::string source_ip = "127.0.0.1";
 
   //zero out the packet buffer
   memset (datagram, 0, DATAGRAM_MAX_LEN);
@@ -58,10 +59,14 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   // socklen_t sourceaddr_len = sizeof(sourceaddr);
 
   //Data part
-  unsigned short payload_len = strlen(data.c_str()) + sizeof(struct udphdr);
-  // std::cout << payload_len << std::endl;
+  unsigned short datagram_len = data.length() + sizeof(struct udphdr);
+  // std::cout << datagram_len << std::endl;
   payload = datagram + sizeof(struct udphdr);
   strcpy(payload, data.c_str());
+
+  // std::cout << "send" << std::endl;
+  // std::cout << "source ip: " << inet_ntoa(sourceaddr.sin_addr) << std::endl;
+  // std::cout << "dest ip: " << inet_ntoa(destaddr.sin_addr) << std::endl;
 
   #ifdef __APPLE__ // macOS
 
@@ -70,7 +75,8 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   udph->uh_dport = destaddr.sin_port;
   udph->uh_ulen = htons(8 + data.length()); //udp header size
   // calculate checksum
-  udph->uh_sum = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, datagram, payload_len);
+  udph->uh_sum = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, datagram, datagram_len);
+  // std::cout << "checksum: " << udph->uh_sum << std::endl;
 
   #elif __linux__ // linux
 
@@ -79,16 +85,13 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   udph->dest = destaddr.sin_port;
   udph->len = htons(8 + data.length()); //udp header size
   // calculate checksum
-  std::cout << "send" << std::endl;
-  std::cout << (sourceaddr.sin_addr.s_addr) << " " << (destaddr.sin_addr.s_addr) << std::endl;
-  std::cout << inet_ntoa(sourceaddr.sin_addr) << " " << inet_ntoa(destaddr.sin_addr) << std::endl;
-  udph->check = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, datagram, payload_len);
-  std::cout << "checksum: " << udph->check << std::endl;
+  udph->check = slip::calc_checksum(sourceaddr.sin_addr.s_addr, destaddr.sin_addr.s_addr, IPPROTO_UDP, datagram, datagram_len);
+  // std::cout << "checksum: " << udph->check << std::endl;
 
   #endif
 
 
-  return sendto(_socketfd, datagram, payload_len, 0, (struct sockaddr *) &destaddr, destaddr_len);
+  return sendto(_socketfd, datagram, datagram_len, 0, (struct sockaddr *) &destaddr, destaddr_len);
 }
 
 slip::Udp::listener_ptr slip::Udp::add_listener(unsigned short port, slip::Udp::listener func) {
@@ -104,9 +107,11 @@ bool slip::Udp::remove_listener(unsigned short port, slip::Udp::listener_ptr ptr
 void slip::Udp::receive_loop() {
 
   sockaddr_in sourceaddr;
+  std::string source_ip = slip::get_local_ip();
+  // std::string source_ip = "127.0.0.1";
 
   sourceaddr.sin_family = AF_INET;
-  sourceaddr.sin_addr.s_addr = inet_addr(slip::get_local_ip().c_str()); // 本机ip
+  sourceaddr.sin_addr.s_addr = inet_addr(source_ip.c_str()); // 本机ip
 
   socklen_t sourceaddr_len = sizeof(sourceaddr);
 
@@ -118,7 +123,7 @@ void slip::Udp::receive_loop() {
   char datagram[DATAGRAM_MAX_LEN];
 
   while (!_finish) {
-    if ((tot_len = recvfrom (_socketfd, datagram, sizeof(datagram), 0, (struct sockaddr *) &sourceaddr, &sourceaddr_len)) != -1) {
+    if ((tot_len = recvfrom (_socketfd, datagram, sizeof(datagram), MSG_DONTWAIT, (struct sockaddr *) &sourceaddr, &sourceaddr_len)) != -1) {
 
       struct ip *iphd = (struct ip *) (datagram);
       struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
@@ -139,10 +144,10 @@ void slip::Udp::receive_loop() {
 
       bool verify = slip::verify_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip), checksum);
 
-      std::cout << "receive" << std::endl;
-      std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
-      std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
-      std::cout << "receive checksum: " << checksum << std::endl;
+      // std::cout << "receive" << std::endl;
+      // std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
+      // std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
+      // std::cout << "receive checksum: " << checksum << std::endl;
 
       if (verify) {
 
