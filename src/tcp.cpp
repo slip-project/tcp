@@ -150,6 +150,7 @@ int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
 
 void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
+  std::cout << "last seq: " << last_seq << std::endl;
   std::cout << "fin: " << flags.fin << std::endl;
   std::cout << "syn: " << flags.syn << std::endl;
   std::cout << "rst: " << flags.rst << std::endl;
@@ -178,7 +179,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       // 接收 ACK & SYN, 发送 ACK, 转到 ESTABLISHED
       if (!flags.fin & flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
-        flags.seq = ++last_seq;
+        last_seq = ++flags.seq;
         flags.syn = false;
 
         state = ESTABLISHED;
@@ -189,6 +190,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
     case SYN_RCVD:
       // 接收 ACK, 不发送, 转到 ESTABLISHED
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
+        last_seq = flags.seq;
         state = ESTABLISHED;
       }
       break;
@@ -197,7 +199,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       // 接收 FIN, 发送 FIN & ACK 转到 FIN_RCVD
       if (!flags.fin & !flags.syn & !flags.rst & flags.psh & !flags.ack & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
-        flags.seq = ++last_seq;
+        last_seq = ++flags.seq;
         flags.psh = false;
         flags.ack = true;
 
@@ -208,7 +210,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
         }
       } else if (flags.fin & !flags.syn & !flags.rst & !flags.psh & !flags.ack & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
-        flags.seq = ++last_seq;
+        last_seq = ++flags.seq;
         flags.ack = true;
 
         state = FIN_RCVD;
@@ -220,7 +222,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       // 接受 FIN & ACK, 发送 ACK, 转到 CLOSED
       if (flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
-        flags.seq = ++last_seq;
+        last_seq = ++flags.seq;
         flags.fin = false;
 
         state = CLOSED;
@@ -231,12 +233,14 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
     case FIN_RCVD:
       // 接受 ACK, 不发送, 转到 CLOSED
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
+        last_seq = flags.seq;
         state = CLOSED;
       }
       break;
     case WAIT_ACK:
       // 接受 ACK, 不发送, 转到 ESTABLISHED
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
+        last_seq = flags.seq;
         state = ESTABLISHED;
       }
       break;
@@ -372,7 +376,7 @@ void slip::Tcp::receive_loop() {
 
         if (_table.find(dest_port) != _table.end()) {
 
-          std::cout << "receive" << std::endl;
+          std::cout << "=========receive========" << std::endl;
           std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
           std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
           std::cout << "receive checksum: " << checksum << std::endl;
