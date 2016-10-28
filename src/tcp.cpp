@@ -269,7 +269,11 @@ slip::Tcp::tcp_pcb_ptr slip::Tcp::connect(std::string dest_ip, unsigned short de
 
   slip::Tcp::tcp_flags flags;
   flags.seq = 0;
+  flags.fin = false;
   flags.syn = true;
+  flags.rst = false;
+  flags.psh = false;
+  flags.ack = false;
 
   _table[source_port] = pcb;
 
