@@ -164,7 +164,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       break;
     case LISTEN:
       // 接收 SYN, 发送 ACK & SYN, 转到 SYN_RCVD
-      if (!flags.fin & flags.syn & !flags.rst & !flags.psh & !flags.ack & (flags.seq == last_seq + 1)) {
+      if (!flags.fin & flags.syn & !flags.rst & !flags.psh & !flags.ack & (flags.seq == last_seq)) {
         flags.ack_seq = flags.seq;
         last_seq = ++flags.seq;
         flags.ack = true;
