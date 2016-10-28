@@ -5,6 +5,10 @@ BUILD := build
 SRC := src
 BIN := bin
 
+$(BIN)/tcptest: $(BUILD)/tcptest.o $(BUILD)/utils.o $(BUILD)/tcp.o
+	@mkdir -p ./$(BIN)
+	$(CXX) $(FLAGS) -I$(INCLUDE) -o $@ $^
+
 $(BIN)/udptest: $(BUILD)/udptest.o $(BUILD)/utils.o $(BUILD)/udp.o
 	@mkdir -p ./$(BIN)
 	$(CXX) $(FLAGS) -I$(INCLUDE) -o $@ $^

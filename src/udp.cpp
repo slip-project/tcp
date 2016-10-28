@@ -166,8 +166,12 @@ void slip::Udp::receive_loop() {
 
         #endif
 
-        for (auto it = _table[dest_port].begin(); it != _table[dest_port].end(); ++it) {
-          (*it)(source_ip, source_port, data_str);
+        if (_table.find(dest_port) != _table.end()) {
+
+          for (auto it = _table[dest_port].begin(); it != _table[dest_port].end(); ++it) {
+            (*it)(source_ip, source_port, data_str);
+          }
+
         }
 
       } else {
