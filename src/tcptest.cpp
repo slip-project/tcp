@@ -15,11 +15,11 @@ int main(int argc, char const *argv[]) {
       int n = atoi(argv[5]);
       auto pcb = tcp.connect(dest_ip, dest_port, source_port);
       for (int i = 0; i < n; ++i) {
+        std::cout << i << std::endl;
         std::stringstream stream;
         stream << "message " << i;
         std::string message = stream.str();
         pcb->send(message);
-        std::cout << "message " << i << " send" << std::endl;
       }
       pcb->close();
     } else if (argv[1][0] == 'l') {
