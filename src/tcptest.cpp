@@ -22,7 +22,8 @@ int main(int argc, char const *argv[]) {
         pcb->send(message);
       }
       pcb->close();
-    } else if (argv[1][0] == 'l') {
+      while (pcb->state != slip::Tcp::CLOSED) {};  
+  } else if (argv[1][0] == 'l') {
       // listen mode
       unsigned short source_port = atoi(argv[2]);
       auto pcb = tcp.listen(source_port);
