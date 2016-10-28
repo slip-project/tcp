@@ -50,6 +50,10 @@ void slip::Tcp::tcp_pcb::close() {
   slip::Tcp::tcp_flags flags;
   flags.seq = ++last_seq;
   flags.fin = true;
+  flags.syn = false;
+  flags.rst = false;
+  flags.psh = false;
+  flags.ack = false;
 
   state = FIN_SENT;
 
