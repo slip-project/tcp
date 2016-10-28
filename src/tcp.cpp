@@ -158,14 +158,14 @@ int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
 
 void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
-  std::cout << "last seq: " << last_seq << std::endl;
-  std::cout << "fin: " << flags.fin << std::endl;
-  std::cout << "syn: " << flags.syn << std::endl;
-  std::cout << "rst: " << flags.rst << std::endl;
-  std::cout << "psh: " << flags.psh << std::endl;
-  std::cout << "ack: " << flags.ack << std::endl;
-  std::cout << "seq: " << flags.seq << std::endl;
-  std::cout << "ack seq: " << flags.ack_seq << std::endl;
+  // std::cout << "last seq: " << last_seq << std::endl;
+  // std::cout << "fin: " << flags.fin << std::endl;
+  // std::cout << "syn: " << flags.syn << std::endl;
+  // std::cout << "rst: " << flags.rst << std::endl;
+  // std::cout << "psh: " << flags.psh << std::endl;
+  // std::cout << "ack: " << flags.ack << std::endl;
+  // std::cout << "seq: " << flags.seq << std::endl;
+  // std::cout << "ack seq: " << flags.ack_seq << std::endl;
 
   switch (state) {
     case CLOSED:
@@ -384,10 +384,10 @@ void slip::Tcp::receive_loop() {
 
         if (_table.find(dest_port) != _table.end()) {
 
-          std::cout << "=========receive========" << std::endl;
-          std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
-          std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
-          std::cout << "receive checksum: " << checksum << std::endl;
+          // std::cout << "=========receive========" << std::endl;
+          // std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
+          // std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
+          // std::cout << "receive checksum: " << checksum << std::endl;
 
           auto pcb = _table[dest_port];
           if (pcb->state != CLOSED) {
@@ -395,9 +395,9 @@ void slip::Tcp::receive_loop() {
               pcb->dest_ip = source_ip;
               pcb->dest_port = source_port;
             }
-            std::cout << "state: " << pcb->state << std::endl;
+            // std::cout << "state: " << pcb->state << std::endl;
             pcb->action(flags, data_str);
-            std::cout << "state: " << pcb->state << std::endl;
+            // std::cout << "state: " << pcb->state << std::endl;
           } else {
             // already closed
             _table.erase(dest_port);
