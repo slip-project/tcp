@@ -321,11 +321,6 @@ void slip::Tcp::receive_loop() {
 
       bool verify = slip::verify_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_TCP, (char*)tcph, tot_len - sizeof(struct ip), checksum);
 
-      // std::cout << "receive" << std::endl;
-      // std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
-      // std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
-      // std::cout << "receive checksum: " << checksum << std::endl;
-
       if (verify) {
 
         std::string source_ip = std::string(inet_ntoa(iphd->ip_src));
@@ -363,14 +358,21 @@ void slip::Tcp::receive_loop() {
         #endif
 
         if (_table.find(dest_port) != _table.end()) {
-          std::cout << dest_port << std::endl;
+
+          std::cout << "receive" << std::endl;
+          std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
+          std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
+          std::cout << "receive checksum: " << checksum << std::endl;
+
           auto pcb = _table[dest_port];
           if (pcb->state != CLOSED) {
             if (pcb->state == LISTEN) {
               pcb->dest_ip = source_ip;
               pcb->dest_port = source_port;
             }
+            std::cout << "state: " << pcb->state << std::endl;
             pcb->action(flags, data_str);
+            std::cout << "state: " << pcb->state << std::endl;
           } else {
             // already closed
             _table.erase(dest_port);
