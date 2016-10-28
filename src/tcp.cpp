@@ -22,7 +22,11 @@ int slip::Tcp::tcp_pcb::send(std::string data) {
 
   slip::Tcp::tcp_flags flags;
   flags.seq = ++last_seq;
+  flags.fin = false;
+  flags.syn = false;
+  flags.rst = false;
   flags.psh = true;
+  flags.ack = false;
 
   state = WAIT_ACK;
 
