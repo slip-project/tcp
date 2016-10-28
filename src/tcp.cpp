@@ -149,6 +149,15 @@ int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
 }
 
 void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
+
+  std::cout << "fin: " << flags.fin << std::endl;
+  std::cout << "syn: " << flags.syn << std::endl;
+  std::cout << "rst: " << flags.rst << std::endl;
+  std::cout << "psh: " << flags.psh << std::endl;
+  std::cout << "ack: " << flags.ack << std::endl;
+  std::cout << "seq: " << flags.seq << std::endl;
+  std::cout << "ack seq: " << flags.ack_seq << std::endl;
+
   switch (state) {
     case CLOSED:
       // 已关闭连接, 无事件响应
