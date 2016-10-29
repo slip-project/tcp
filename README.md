@@ -134,7 +134,7 @@ TCP（主目录）
 
 ---------------------------------------------------------------------------------------------------------------
 
-
+ 
 
 ### UDP类
 
@@ -218,6 +218,28 @@ slip::Udp udp; //此为示例中的方法
  
 
 ### TCP类
+
+首先需要通过`tcp.connect` 或者 `tcp.listen` 取得 `tcp控制块`的指针
+
+```c++
+tcp_pcb_ptr connect(std::string dest_ip, 
+                    unsigned short dest_port, 
+                    unsigned short source_port);
+
+tcp_pcb_ptr listen(unsigned short source_port);
+```
+
+`tcp.connect` 和 `tcp.listen` 区分主要为发出连接请求和接收连接请求。参数与上面的方法中的同名参数类似，此处不再赘述。
+
+
+
+随后发送端需要通过`tcp控制块`进行发送和关闭连接操作。通过调用`pcb -> send(message)`以及 `pcb -> close()` 即可达成以上功能。
+
+对于接收端，只需要类似于上面的UDP类中那样，调用`pcb -> add_listener()` 那样添加好监听器便可以实现接收的功能了。
+
+
+
+
 
 
 
