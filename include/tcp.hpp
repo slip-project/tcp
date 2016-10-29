@@ -83,8 +83,6 @@ public:
       unsigned int last_seq;
       unsigned int timer;
 
-      tcp_pcb() {};
-
       /**
        * [send 发送数据方法]
        * @param  data [要发送的数据]
@@ -118,6 +116,8 @@ public:
       std::string last_data;
 
       Tcp* tcp;
+
+      tcp_pcb() {};
 
       /**
        * [send 发送数据方法]

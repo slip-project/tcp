@@ -4,7 +4,7 @@ Super Lightweight Internet Protocol Inplementation based on C++.
 
 项目组成员：
 
-* 郑齐(@tidyzq) 
+* 郑齐(@tidyzq)
 * 赵子琳(@SakurazukaKen)
 * 欧一锋(@a20185)
 * 王毅峰
@@ -46,27 +46,47 @@ TCP（主目录）
   * udptest.cpp
 
 
+## [注意事项]
+由于本项目使用了 raw socket, 因此需要 **root** 权限才能正常运行, 同时需要设置**ip转发**防止内核自动终止 tcp 包
+* 关闭 ubuntu 防火墙
+  ```shell
+  sudo ufw disable
+  ```
+* 关闭 iptabls 转发的自动 RST
+  ```shell
+  sudo iptables -A OUTPUT -p tcp --tcp-flags RST RST -j DROP
+  ```
 
 
 ## 使用方式:
 
 * Shell 下进入本目录执行`make`命令即可编译。
-* 执行测试可以使用`bin`目录下的*tcptest*以及 *udptest* 文件。
+* 执行测试可以使用`bin`目录下的 *tcptest* 以及 *udptest* 文件。
 * 测试文件使用方法：
-  * ./tcptest --mode  --dest-ip  --dest-port  --source-port   
-    * *mode*:指定tcp使用模式。**s**为发送，**l**为接收。（注意，如果为接收模式的话，则*dest-ip*以及*dest-port*为空。）
-    * *dest-ip*:目的主机的ip地址。
-    * *dest-port*:目的主机的端口。
-    * *source-port*:本地主机的端口。
-  * ./udptest  --dest-ip  --listen-port  --send-port  --dgpkt-count
-    * *dest-ip*: 目的主机的ip地址。
-    * *listen-port*: 监听端口，目的主机的接收端口。
-    * *send-port*: 发送端口，本地主机的发送端口。
-    * *dgpkt-count*: 测试发送的数据报文包(*datagram packet*)数量。
+  * `sudo ./tcptest [mode] [dest-ip/listen-port] [dest-port] [source-port] [pkt-count]`
+    * `sudo ./tcptest l [listen-port]`
+      * 指定程序监听本机`listen-port`端口的tcp连接。
+    * `sudo ./tcptest s [dest-ip] [dest-port] [source-port] [pkg-count]`
+      * 指定程序使用本地的`source-port`端口向ip为`dest-ip`的`dest-port`端口发起tcp连接, 并自动发送`pkt-count`个测试包。
+    * `mode`: 指定tcp使用模式。**s**为主动连接，**l**为监听端口。
+    * `dest-ip`: 目的主机的ip地址。
+    * `dest-port`: 目的主机的端口。
+    * `source-port`: 本地主机的端口。
+    * `pkt-count`: 自动发送测试数据包的个数。
+  * `sudo ./udptest [mode] [dest-ip/listen-port] [dest-port/pkt-count] [source-port] [pkt-count]`
+    * `sudo ./udptest l [listen-port] [pkt-count]`
+      * 指定程序监听本机`listen-port`端口的udp连接, 当收到`pkt-count`个数据包后终止程序。
+    * `sudo ./udptest s [dest-ip] [dest-port] [source-port] [pkt-count]`
+      * 指定程序使用本地的`source-port`端口向ip为`dest-ip`的`dest-port`端口自动发送`pkt-count`个udp测试包。
+    * `mode`: 指定udp使用模式。**s**为发送，**l**为接收。
+    * `dest-ip`: 目的主机的ip地址。
+    * `dest-port`: 目的主机的接收端口。
+    * `source-port`: 本地主机的发送端口。
+    * `pkt-count`: 测试发送的数据报文包(*datagram packet*)数量。
 
- 
 
-  
+
+
 
 ## 本实现的API接口：
 
@@ -79,10 +99,10 @@ TCP（主目录）
   * 使用方式:
 
   * ```c++
-    unsigned short calc_checksum(unsigned long source_ip, 
-                  unsigned long dest_ip, 
+    unsigned short calc_checksum(unsigned long source_ip,
+                  unsigned long dest_ip,
                   u_int8_t protocol,
-                  char* payload, 
+                  char* payload,
                   unsigned short payload_len);
     ```
 
@@ -92,15 +112,15 @@ TCP（主目录）
     * *payload*:   数据包
     * *payload_len*: 数据包长度
 
-     
+
 
 * **校验和检查方法:**
 
   * 使用方式:
 
   * ```c++
-    bool verify_checksum(unsigned long source_ip, 
-                         unsigned long dest_ip, 
+    bool verify_checksum(unsigned long source_ip,
+                         unsigned long dest_ip,
                          u_int8_t protocol,
                          char* payload,
                          unsigned short payload_len,
@@ -114,7 +134,7 @@ TCP（主目录）
     * *payload_len*:   数据包长度
     * *checksum*:    传入的原始报文校验和
 
- 
+
 
 * 获取本地IP方法：
 
@@ -126,15 +146,14 @@ TCP（主目录）
 
     * 返回为*调用者本机*的IP
 
- 
 
- 
 
- 
+
+
 
 ---------------------------------------------------------------------------------------------------------------
 
- 
+
 
 ### UDP类
 
@@ -165,7 +184,7 @@ slip::Udp udp; //此为示例中的方法
 
     ```c++
     //调用样例,详情请参照test/udptest.cpp
-    udp.add_listener(listen_port, 
+    udp.add_listener(listen_port,
                      [&count](std::string source_ip,
                               unsigned short source_port,
                               std::string message)
@@ -176,7 +195,7 @@ slip::Udp udp; //此为示例中的方法
                     );
     ```
 
- 
+
 
 * **移除监听器方法**:
 
@@ -191,16 +210,16 @@ slip::Udp udp; //此为示例中的方法
     * *listener_ptr* : 添加监听器时返回的监听器指针。
     * 返回值为删除操作是否成功的*bool*值。
 
- 
+
 
 * **数据报文包发送方法**：
 
   * 使用方法：
 
     ```c++
-    udp.send(std::string dest_ip, 
-             unsigned short dest_port, 
-             unsigned short source_port, 
+    udp.send(std::string dest_ip,
+             unsigned short dest_port,
+             unsigned short source_port,
              std::string data);
     ```
 
@@ -209,21 +228,20 @@ slip::Udp udp; //此为示例中的方法
     * *source_port*:  源主机端口
     * *data*:  发送的数据，字符串形式
 
- 
 
 
 
 ------
 
- 
+
 
 ### TCP类
 
 首先需要通过`tcp.connect` 或者 `tcp.listen` 取得 `tcp控制块`的指针
 
 ```c++
-tcp_pcb_ptr connect(std::string dest_ip, 
-                    unsigned short dest_port, 
+tcp_pcb_ptr connect(std::string dest_ip,
+                    unsigned short dest_port,
                     unsigned short source_port);
 
 tcp_pcb_ptr listen(unsigned short source_port);
