@@ -15,6 +15,22 @@ namespace slip {
  * TCP 类
  */
 class Tcp {
+
+private:
+
+  /**
+   * TCP的标志位
+   */
+  struct tcp_flags {
+    unsigned int seq;       // 序列号
+    unsigned int ack_seq;   // ack 序列号
+    bool fin;
+    bool syn;
+    bool rst;
+    bool psh;
+    bool ack;
+  };
+
 public:
 
   /**
@@ -34,7 +50,7 @@ public:
   /**
    * TCP控制块
    */
-  struct tcp_pcb;
+  class tcp_pcb;
 
   /**
    * TCP控制块指针
@@ -57,71 +73,68 @@ public:
   typedef std::map<unsigned short, tcp_pcb_ptr> pcb_table;
 
   /**
-   * TCP的标志位
+   * TCP控制块
    */
-  struct tcp_flags {
-    unsigned int seq;       // 序列号
-    unsigned int ack_seq;   // ack 序列号
-    bool fin;
-    bool syn;
-    bool rst;
-    bool psh;
-    bool ack;
-  };
+  class tcp_pcb {
+    public:
+      std::string dest_ip;
+      unsigned short dest_port, source_port;
+      tcp_state state;
+      unsigned int last_seq;
+      unsigned int timer;
 
-  struct tcp_pcb {
-    std::string dest_ip;
-    unsigned short dest_port, source_port;
-    tcp_state state;
-    unsigned int last_seq;
-    std::list<pcb_listener> listeners;
-    unsigned int timer;
+      tcp_pcb() {};
 
-    tcp_flags last_flags;
-    std::string last_data;
+      /**
+       * [send 发送数据方法]
+       * @param  data [要发送的数据]
+       * @return      [description]
+       */
+      int send(std::string data);
 
-    Tcp* tcp;
+      /**
+       * [add_listener 控制块监听器添加方法]
+       * @param  func [监听函数，lambda表达式]
+       * @return      [pcb_listener_ptr, 控制块监听器指针]
+       */
+      pcb_listener_ptr add_listener(pcb_listener func);
 
-    /**
-     * [send 发送数据方法]
-     * @param  data [要发送的数据]
-     * @return      [description]
-     */
-    int send(std::string data);
+      /**
+       * [remove_listener 控制块监听器删除方法]
+       * @param  ptr [pcb_listener_ptr , 控制块监听器添加方法返回的指针]
+       * @return     [bool , 删除操作是否成功]
+       */
+      bool remove_listener(pcb_listener_ptr ptr);
 
-    /**
-     * [add_listener 控制块监听器添加方法]
-     * @param  func [监听函数，lambda表达式]
-     * @return      [pcb_listener_ptr, 控制块监听器指针]
-     */
-    pcb_listener_ptr add_listener(pcb_listener func);
+      /**
+       * [close TCP连接关闭方法]
+       */
+      void close();
 
-    /**
-     * [remove_listener 控制块监听器删除方法]
-     * @param  ptr [pcb_listener_ptr , 控制块监听器添加方法返回的指针]
-     * @return     [bool , 删除操作是否成功]
-     */
-    bool remove_listener(pcb_listener_ptr ptr);
+    private:
+      std::list<pcb_listener> listeners;
 
-    /**
-     * [close TCP连接关闭方法]
-     */
-    void close();
+      tcp_flags last_flags;
+      std::string last_data;
 
-    /**
-     * [send 发送数据方法]
-     * @param  flags [TCP标志位]
-     * @param  data  [要发送的数据]
-     * @return       [description]
-     */
-    int send(tcp_flags flags, std::string data);
+      Tcp* tcp;
 
-    /**
-     * [action TCP状态机]
-     * @param flags [TCP标志位]
-     * @param data  [要发送的数据]
-     */
-    void action(tcp_flags flags, std::string data);
+      /**
+       * [send 发送数据方法]
+       * @param  flags [TCP标志位]
+       * @param  data  [要发送的数据]
+       * @return       [description]
+       */
+      int send(tcp_flags flags, std::string data);
+
+      /**
+       * [action TCP状态机]
+       * @param flags [TCP标志位]
+       * @param data  [要发送的数据]
+       */
+      void action(tcp_flags flags, std::string data);
+
+    friend Tcp;
   };
 
   Tcp();
@@ -145,7 +158,9 @@ public:
 
 private:
 
-
+  /**
+   * [receive_loop 监听循环]
+   */
   void receive_loop();
 
   int _socketfd;
