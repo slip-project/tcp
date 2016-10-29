@@ -17,7 +17,7 @@
 unsigned short slip::csum(unsigned short *ptr, int nbytes) {
   long sum;
   unsigned short oddbyte;
-  unsigned short answer;
+  short answer;
 
   sum = 0;
   while (nbytes > 1) {
