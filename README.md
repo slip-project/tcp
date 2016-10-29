@@ -58,10 +58,10 @@ TCP（主目录）
     * *dest-ip*:目的主机的ip地址。
     * *dest-port*:目的主机的端口。
     * *source-port*:本地主机的端口。
-  * ./udptest  --dest-ip  --dest-port  --source-port  --dgpkt-count
-    * *dest-ip*:目的主机的ip地址。
-    * *dest-port*:目的主机的端口。
-    * *source-port*:本地主机的端口。
+  * ./udptest  --dest-ip  --listen-port  --send-port  --dgpkt-count
+    * *dest-ip*: 目的主机的ip地址。
+    * *listen-port*: 监听端口，目的主机的接收端口。
+    * *send-port*: 发送端口，本地主机的发送端口。
     * *dgpkt-count*: 测试发送的数据报文包(*datagram packet*)数量。
 
  
@@ -130,4 +130,80 @@ TCP（主目录）
 
 ### UDP类
 
-* ​
+（此类使用时通过本类对象方法调用）
+
+```c++
+slip::Udp udp; //此为示例中的方法
+```
+
+
+
+* **添加监听器方法**：
+
+  注意：本类*必须* 调用添加监听器方法之后才可正常接收UDP信息。
+
+  * 使用方法：
+
+    ```c++
+    udp.add_listener(listen_port,
+                     std::function<void(std::string,
+                                        unsigned short,
+                                        std::string)>);
+    ```
+
+    * *listen_port*： 为监听端口（远程主机的接收端口）。
+    * 参数2为**监听函数**：写成*lambda*表达式。
+    * 返回值为 *listener_ptr* , 可以用于之后的监听器删除
+
+    ```c++
+    //调用样例,详情请参照test/udptest.cpp
+    udp.add_listener(listen_port, 
+                     [&count](std::string source_ip,
+                              unsigned short source_port,
+                              std::string message)
+                     -> void {
+          					// do something
+         					 ++count;
+       					 }
+                    );
+    ```
+
+ 
+
+* **移除监听器方法**:
+
+  * 使用方法：
+
+    ```c++
+    udp.remove_listener(unsigned short port,
+                        Udp::listener_ptr ptr);
+    ```
+
+    * *port*: 为监听端口（远程主机的接收端口）。
+    * *listener_ptr* : 添加监听器时返回的监听器指针。
+    * 返回值为删除操作是否成功的*bool*值。
+
+ 
+
+* **数据报文包发送方法**：
+
+  * 使用方法：
+
+    ```c++
+    udp.send(std::string dest_ip, 
+             unsigned short dest_port, 
+             unsigned short source_port, 
+             std::string data);
+    ```
+
+    * *dest_ip*:  目的主机ip地址
+    * *dest_port*:  目的主机端口
+    * *source_port*:  源主机端口
+    * *data*:  发送的数据，字符串形式
+
+ 
+
+ 
+
+### TCP类
+
