@@ -5,9 +5,13 @@ BUILD := build
 SRC := src
 TEST := test
 BIN := bin
+WOCHAT := wochat_cli
 
-all: $(BIN)/tcptest $(BIN)/udptest
+all: $(BIN)/server $(BIN)/udptest $(BIN)/tcptest
 
+$(BIN)/server: $(BUILD)/$(WOCHAT)/server.o $(BUILD)/tcp.o $(BUILD)/udp.o $(BUILD)/utils.o 
+	@mkdir -p ./$(BIN)
+	$(CXX) $(FLAGS) -I $(INCLUDE) -o $@ $^
 
 $(BIN)/tcptest: $(BUILD)/$(TEST)/tcptest.o $(BUILD)/utils.o $(BUILD)/tcp.o
 	@mkdir -p ./$(BIN)
@@ -16,6 +20,10 @@ $(BIN)/tcptest: $(BUILD)/$(TEST)/tcptest.o $(BUILD)/utils.o $(BUILD)/tcp.o
 $(BIN)/udptest: $(BUILD)/$(TEST)/udptest.o $(BUILD)/utils.o $(BUILD)/udp.o
 	@mkdir -p ./$(BIN)
 	$(CXX) $(FLAGS) -I $(INCLUDE) -o $@ $^
+
+$(BUILD)/$(WOCHAT)/%.o: $(WOCHAT)/%.cpp
+	@mkdir -p ./$(BUILD)/$(WOCHAT)
+	$(CXX) $(FLAGS) -I $(INCLUDE) -c -o $@ $<
 
 $(BUILD)/$(TEST)/%.o: $(TEST)/%.cpp
 	@mkdir -p ./$(BUILD)/$(TEST)

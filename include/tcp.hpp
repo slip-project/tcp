@@ -108,7 +108,7 @@ public:
        * [close TCP连接关闭方法]
        */
       void close();
-
+      tcp_pcb() {};
     private:
       std::list<pcb_listener> listeners;
 
@@ -117,7 +117,7 @@ public:
 
       Tcp* tcp;
 
-      tcp_pcb() {};
+      
 
       /**
        * [send 发送数据方法]
