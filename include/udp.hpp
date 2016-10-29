@@ -64,6 +64,9 @@ public:
 
 private:
 
+  /**
+   * [receive_loop description]
+   */
   void receive_loop();
 
   int _socketfd;
