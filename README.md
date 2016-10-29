@@ -1,8 +1,14 @@
 # 简易TCP/IP与UDP接口实现（Slip）
 
-Super Lightweight IP Inplementation base on C++.
+Super Lightweight Internet Protocol Inplementation based on C++.
 
-项目组成员：郑齐(@tidyzq) 、赵子琳(@SakurazukaKen)、欧一锋(@a20185)、王毅峰、王天宇
+项目组成员：
+
+* 郑齐(@tidyzq) 
+* 赵子琳(@SakurazukaKen)
+* 欧一锋(@a20185)
+* 王毅峰
+* 王天宇
 
 
 
@@ -64,3 +70,64 @@ TCP（主目录）
 
 ## 本实现的API接口：
 
+### Utils类：
+
+ (通过*命名空间* 调用即可，本类置于*namespace slip* 中)
+
+* **校验和计算方法：**
+
+  * 使用方式:
+
+  * ```c++
+    unsigned short calc_checksum(unsigned long source_ip, 
+                  unsigned long dest_ip, 
+                  u_int8_t protocol,
+                  char* payload, 
+                  unsigned short payload_len);
+    ```
+
+    * *source_ip*: 源主机ip
+    * *dest_ip*：目的主机ip
+    * *protocol*： 8位协议号
+    * *payload*:   数据包
+    * *payload_len*: 数据包长度
+
+     
+
+* **校验和检查方法:**
+
+  * 使用方式:
+
+  * ```c++
+    bool verify_checksum(unsigned long source_ip, 
+                         unsigned long dest_ip, 
+                         u_int8_t protocol,
+                         char* payload,
+                         unsigned short payload_len,
+                         unsigned short checksum);
+    ```
+
+    * *source_ip*:    源主机ip地址
+    * *dest_ip*:    目的主机ip地址
+    * *protocol*:    8位协议号
+    * *payload*:   数据包
+    * *payload_len*:   数据包长度
+    * *checksum*:    传入的原始报文校验和
+
+ 
+
+* 获取本地IP方法：
+
+  * 使用方法：
+
+  * ```c++
+    std::string get_local_ip();
+    ```
+
+    ​
+
+ 
+
+### UDP类
+
+* ​
