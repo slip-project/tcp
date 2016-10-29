@@ -4,11 +4,11 @@ Super Lightweight Internet Protocol Inplementation based on C++.
 
 项目组成员：
 
-* 郑齐(@tidyzq)
-* 赵子琳(@SakurazukaKen)
-* 欧一锋(@a20185)
-* 王毅峰
+* 欧一锋(@a20185)(组长)
 * 王天宇
+* 王毅峰
+* 赵子琳(@SakurazukaKen)
+* 郑齐(@tidyzq)
 
 
 
@@ -47,7 +47,7 @@ TCP（主目录）
 
 
 ## [注意事项]
-由于本项目使用了 raw socket, 因此需要 **root** 权限才能正常运行, 同时需要设置**ip转发**防止内核自动终止 tcp 包
+由于本项目使用了 *raw socket*, 因此**需要 root 权限才能正常运行**, 同时需要设置 ip 转发**防止内核自动终止 tcp 包**
 * 关闭 ubuntu 防火墙
   ```shell
   sudo ufw disable
@@ -63,26 +63,53 @@ TCP（主目录）
 * Shell 下进入本目录执行`make`命令即可编译。
 * 执行测试可以使用`bin`目录下的 *tcptest* 以及 *udptest* 文件。
 * 测试文件使用方法：
-  * `sudo ./tcptest [mode] [dest-ip/listen-port] [dest-port] [source-port] [pkt-count]`
-    * `sudo ./tcptest l [listen-port]`
+  * ### tcptest
+
+    * ```shell
+      sudo ./tcptest l [listen-port]
+      ```
+
       * 指定程序监听本机`listen-port`端口的tcp连接。
-    * `sudo ./tcptest s [dest-ip] [dest-port] [source-port] [pkg-count]`
+
+    * ```shell
+      sudo ./tcptest s [dest-ip] [dest-port] [source-port] [pkg-count]
+      ```
+
       * 指定程序使用本地的`source-port`端口向ip为`dest-ip`的`dest-port`端口发起tcp连接, 并自动发送`pkt-count`个测试包。
-    * `mode`: 指定tcp使用模式。**s**为主动连接，**l**为监听端口。
-    * `dest-ip`: 目的主机的ip地址。
-    * `dest-port`: 目的主机的端口。
-    * `source-port`: 本地主机的端口。
-    * `pkt-count`: 自动发送测试数据包的个数。
-  * `sudo ./udptest [mode] [dest-ip/listen-port] [dest-port/pkt-count] [source-port] [pkt-count]`
-    * `sudo ./udptest l [listen-port] [pkt-count]`
+
+    * **mode**: 指定tcp使用模式。**s**为主动连接，**l**为监听端口。
+
+    * **dest-ip**: 目的主机的ip地址。
+
+    * **dest-port**: 目的主机的端口。
+
+    * **source-port**: 本地主机的端口。
+
+    * **pkt-count**: 自动发送测试数据包的个数。
+
+  * ### udptest
+
+    * ```shell
+      sudo ./udptest l [listen-port] [pkt-count]
+      ```
+
       * 指定程序监听本机`listen-port`端口的udp连接, 当收到`pkt-count`个数据包后终止程序。
-    * `sudo ./udptest s [dest-ip] [dest-port] [source-port] [pkt-count]`
+
+    * ```shell
+      sudo ./udptest s [dest-ip] [dest-port] [source-port] [pkt-count]
+      ```
+
       * 指定程序使用本地的`source-port`端口向ip为`dest-ip`的`dest-port`端口自动发送`pkt-count`个udp测试包。
-    * `mode`: 指定udp使用模式。**s**为发送，**l**为接收。
-    * `dest-ip`: 目的主机的ip地址。
-    * `dest-port`: 目的主机的接收端口。
-    * `source-port`: 本地主机的发送端口。
-    * `pkt-count`: 测试发送的数据报文包(*datagram packet*)数量。
+
+    * **mode**: 指定udp使用模式。**s**为发送，**l**为接收。
+
+    * **dest-ip**: 目的主机的ip地址。
+
+    * **dest-port**: 目的主机的接收端口。
+
+    * **source-port**: 本地主机的发送端口。
+
+    * **pkt-count**: 测试发送的数据报文包(*datagram packet*)数量。
 
 
 
