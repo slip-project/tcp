@@ -113,10 +113,10 @@ int main(int argc, char const *argv[]) {
 	        std::string message = stream.str();
 			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
 			cout << "Login Successfully! Enjoy :)" << endl;
-			printMenu(isLogin);
+			
 			isLogin = true;
 			currentUser = userName;
-
+			printMenu(isLogin);
 		} else if (instruction == "logout" && isLogin) {
 			std::stringstream stream;
 	        stream << "LGOU " << currentUser << endl;
