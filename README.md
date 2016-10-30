@@ -282,6 +282,57 @@ tcp_pcb_ptr listen(unsigned short source_port);
 
 对于接收端，只需要类似于上面的UDP类中那样，调用`pcb -> add_listener()` 那样添加好监听器便可以实现接收的功能了。
 
+## TCP 过程模型
+
+本项目的tcp实现参考了标准的tcp协议模型与比特交换协议模型, tcp头与标准tcp头相同, 而连接状态与握手次数方面进行了一些修改, 具体变化如下:
+
++ 数据交换**采用停等策略**, 即确定一个序列已被接收且无错后才会发送下一个序列.
++ 结束时的**4次握手改为3次握手**, 3次握手内容与建立连接的3次握手相似, 即**将原本的中间两个 fin 和 ack 包合并**为一个 fin & ack 包.
+
+### TCP 流程图
+
+```mermaid
+sequenceDiagram
+	Note over A, B: A connect to B
+	A->>B: SYN seq=0
+	B->>A: SYN & ACK seq=1 ack_seq=0
+	A->>B: ACK seq=2 ack_seq=1
+	Note over A, B: connect complete
+	Note over A, B: A send data to B 
+	A->>B: PSH seq=x
+	B->>A: ACK seq=x+1 ack_seq=x
+	Note over A, B: data transmission complete 
+	Note over A, B: B send data to A
+	B->>A: PSH seq=x+2
+	A->>B: ACK seq=x+3 ack_seq=x+2
+	Note over A, B: data transmission complete
+	Note over A, B: begin to close
+	A->>B: FIN seq=x
+	B->>A: FIN & ACK seq=x+1 ack_seq=x
+	A->>B: ACK seq=x+2 ack_seq=x+1
+	Note over A, B: close complete
+```
+
+### TCP 状态图
+
+```mermaid
+graph TD
+	CLOSED-->|"listen(port)"|LISTEN
+	LISTEN-->|"recv(SYN)\n-----\nsend(SYN&ACK)"|SYN_RCVD
+	SYN_RCVD-->|"recv(ACK)"|ESTABLISHED
+	CLOSED-->|"connect(port)\n-----\nsend(SYN)"|SYN_SEND
+	SYN_SEND-->|"recv(SYN&ACK)\n-----\nsend(ACK)"|ESTABLISHED
+	ESTABLISHED-->|"recv(PSH)\n-----\nsend(ACK)\ndeliver(data)"|ESTABLISHED
+	ESTABLISHED-->|"have_send(data)\n-----\nsend(PSH, data)\nstart(timer)"|WAIT_ACK
+	WAIT_ACK-->|"recv(ACK)\n-----\nstop(timer)"|ESTABLISHED
+	ESTABLISHED-->|"close()\n-----\nsend(FIN)"|FIN_SEND
+	FIN_SEND-->|"recv(FIN&ACK)\n-----\nsend(ACK)"|CLOSED
+	ESTABLISHED-->|"recv(FIN)\n-----\nsend(FIN&ACK)"|FIN_RCVD
+	FIN_RCVD-->|"recv(ACK)"|CLOSED
+```
+
+
+
 
 
 

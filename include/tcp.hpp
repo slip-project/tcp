@@ -113,9 +113,6 @@ public:
     private:
       std::list<pcb_listener> listeners;
 
-      tcp_flags last_flags;
-      std::string last_data;
-
       Tcp* tcp;
 
 

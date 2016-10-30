@@ -115,16 +115,12 @@ void slip::Tcp::tcp_pcb::close() {
  */
 int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
 
-  // remenber flags and data to resend
-  last_flags = flags;
-  last_data = data;
-
   // set timer
   if (timer->enable) {
     timer->enable = false;
   }
-  timer = tcp->_timeout.add_timer(500, [this]()->void{
-    this->send(this->last_flags, this->last_data);
+  timer = tcp->_timeout.add_timer(500, [this, flags, data]()->void{
+    this->send(flags, data);
   });
 
   #ifdef DEBUG
@@ -258,7 +254,32 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
   switch (state) {
     case CLOSED:
-      // 已关闭连接, 无事件响应
+      // 接收 FIN & ACK 乱序, 发送 ack, 关闭 timer
+      if (flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq - 2) & (flags.seq == last_seq - 1)) {
+        flags.ack_seq = flags.seq;
+        flags.seq = last_seq;
+        flags.fin = false;
+
+        #ifdef DEBUG
+
+        std::cout << "[GOTO] " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
+        send(flags, "");
+
+        timer->enable = false;
+
+      #ifdef DEBUG
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
+      }
       break;
     case LISTEN:
       // 接收 SYN, 发送 ACK & SYN, 转到 SYN_RCVD
@@ -271,7 +292,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
         #endif
@@ -289,7 +310,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       }
       break;
     case SYN_SENT:
-      // 接收 ACK & SYN, 发送 ACK, 转到 ESTABLISHED
+      // 接收 ACK & SYN, 发送 ACK, 转到 ESTABLISHED, 关闭 timer
       if (!flags.fin & flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
         last_seq = ++flags.seq;
@@ -299,7 +320,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
         #endif
@@ -326,7 +347,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
       } else {
@@ -338,24 +359,51 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       }
       break;
     case ESTABLISHED:
-      // 接收 PSH, 发送 ACK, 不转移, 触发 listener
+      // 接收 PSH, 发送 ACK, 不转移, 触发 listener, 关闭 timer
+      // 接收 PSH 乱序, 发送 ACK, 不转移, 不触发 listener, 关闭 timer
       // 接收 FIN, 发送 FIN & ACK 转到 FIN_RCVD
-      if (!flags.fin & !flags.syn & !flags.rst & flags.psh & !flags.ack & (flags.seq == last_seq + 1)) {
-        flags.ack_seq = flags.seq;
-        last_seq = ++flags.seq;
-        flags.psh = false;
-        flags.ack = true;
+      // 接收 ACK & SYN 乱序, 发送 ACK, 不转移, 关闭 timer
+      if (!flags.fin & !flags.syn & !flags.rst & flags.psh & !flags.ack) {
 
-        #ifdef DEBUG
+        if (flags.seq == last_seq + 1) { // 如果是正常序列, 则传递给上层
 
-        std::cout << "goto state: " << getState(state) << std::endl;
-        std::cout << "================================" << std::endl;
+          flags.ack_seq = flags.seq;
+          last_seq = ++flags.seq;
+          flags.psh = false;
+          flags.ack = true;
 
-        #endif
+          #ifdef DEBUG
 
-        send(flags, "");
-        for (auto it = listeners.begin(); it != listeners.end(); ++it) {
-          (*it)(data);
+          std::cout << "[GOTO] " << getState(state) << std::endl;
+          std::cout << "================================" << std::endl;
+
+          #endif
+
+          send(flags, "");
+
+          timer->enable = false;
+
+          for (auto it = listeners.begin(); it != listeners.end(); ++it) {
+            (*it)(data);
+          }
+
+        } else if (flags.seq == last_seq - 1) { // 如果是上一个序列, 则上一个ack包失败, 重新发送ack, 不传递给上层
+
+          flags.ack_seq = flags.seq;
+          flags.seq = last_seq;
+          flags.psh = false;
+          flags.ack = true;
+
+          #ifdef DEBUG
+
+          std::cout << "[REPEAT]" << std::endl;
+          std::cout << "================================" << std::endl;
+
+          #endif
+
+          send(flags, "");
+
+          timer->enable = false;
         }
       } else if (flags.fin & !flags.syn & !flags.rst & !flags.psh & !flags.ack & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
@@ -366,12 +414,28 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
         #endif
 
         send(flags, "");
+
+      } else if (!flags.fin & flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq - 2) & (flags.seq == last_seq - 1)) {
+        flags.ack_seq = flags.seq;
+        flags.seq = last_seq;
+        flags.syn = false;
+
+        #ifdef DEBUG
+
+        std::cout << "[REPEAT]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
+        send(flags, "");
+
+        timer->enable = false;
 
       #ifdef DEBUG
 
@@ -384,7 +448,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       }
       break;
     case FIN_SENT:
-      // 接受 FIN & ACK, 发送 ACK, 转到 CLOSED
+      // 接受 FIN & ACK, 发送 ACK, 转到 CLOSED, 关闭 timer
       if (flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         flags.ack_seq = flags.seq;
         last_seq = ++flags.seq;
@@ -394,12 +458,14 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
         #endif
 
         send(flags, "");
+
+        timer->enable = false;
 
       #ifdef DEBUG
 
@@ -421,7 +487,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
       } else {
@@ -442,7 +508,7 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         #ifdef DEBUG
 
-        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "[GOTO] " << getState(state) << std::endl;
         std::cout << "================================" << std::endl;
 
       } else {
