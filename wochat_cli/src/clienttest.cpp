@@ -47,6 +47,10 @@ void printChoices(bool loginStatus , std::string& username , std::string& instru
 		cout << "Please Login first." << endl;
 		cout << "Your Username >> ";
 		cin >> username;
+		if (username == "exit") {
+			instructions = "exit";
+			username = "";
+		}
 	}
 }
 
