@@ -124,7 +124,7 @@ int main(int argc, char const *argv[]) {
 			cin >> tempname;
 			cout << "Please Input the Message and press enter:" << endl;
 			cout << currentUser << " >> ";
-			fflush(stdin);
+			cin.ignore(1000 , '\n');
 			std::getline(cin , tempcontent);
 
 			stream << "SEND " << userName << " " << tempname << " " << tempcontent << endl;
