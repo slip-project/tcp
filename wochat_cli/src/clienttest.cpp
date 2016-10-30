@@ -37,6 +37,7 @@ void printChoices(bool loginStatus , std::string& username , std::string& instru
 		cout << username << " >> ";
 		cin >> instructions;
 	} else {
+		instructions = "LOGIN";
 		cout << "Please Login first." << endl;
 		cout << "Your Username >> ";
 		cin >> username;
@@ -61,10 +62,6 @@ int main(int argc, char const *argv[]) {
 	std::string userName;
 	slip::Udp udp;
 
-
-
-	printMenu(isLogin);
-	printChoices(isLogin, userName , instruction);
 
 		/**
 		 * Start a port to listen udp from server
@@ -93,7 +90,8 @@ int main(int argc, char const *argv[]) {
  //    printMenu(isLogin);
 	// printChoices(isLogin , username , instruction);
 	while (1) {
-		cin >> instruction;
+		printMenu(isLogin);
+		printChoices(isLogin, userName , instruction);
 		if (instruction == "LOGIN" && !isLogin) {
 			cin >> userName;
 			std::stringstream stream;
