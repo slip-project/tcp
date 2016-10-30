@@ -7,7 +7,11 @@ TEST := test
 BIN := bin
 WOCHAT := wochat_cli
 
+<<<<<<< HEAD
 all: $(BIN)/server $(BIN)/udptest $(BIN)/tcptest
+=======
+all: $(BIN)/udptest
+>>>>>>> 14504bef3215530956660239f2359f121e5b167c
 
 $(BIN)/server: $(BUILD)/$(WOCHAT)/server.o $(BUILD)/tcp.o $(BUILD)/udp.o $(BUILD)/utils.o 
 	@mkdir -p ./$(BIN)
