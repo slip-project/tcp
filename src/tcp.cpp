@@ -12,9 +12,36 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#define DEBUG
 #define DATAGRAM_MAX_LEN 4096
 
+#ifdef DEBUG
+
 #include <iostream>
+
+std::string getState(slip::Tcp::tcp_state state) {
+  switch (state) {
+    case slip::Tcp::CLOSED:
+      return "CLOSED";
+    case slip::Tcp::LISTEN:
+      return "LISTEN";
+    case slip::Tcp::SYN_SENT:
+      return "SYN_SENT";
+    case slip::Tcp::SYN_RCVD:
+      return "SYN_RCVD";
+    case slip::Tcp::ESTABLISHED:
+      return "ESTABLISHED";
+    case slip::Tcp::FIN_SENT:
+      return "FIN_SENT";
+    case slip::Tcp::FIN_RCVD:
+      return "FIN_RCVD";
+    case slip::Tcp::WAIT_ACK:
+      return "WAIT_ACK";
+  }
+  return "";
+}
+
+#endif
 
 /**
  * [send 发送数据方法]
@@ -87,6 +114,26 @@ void slip::Tcp::tcp_pcb::close() {
  * @return       [description]
  */
 int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
+
+  #ifdef DEBUG
+
+  std::cout << "===== tcp send datagram =====" << std::endl;
+  std::cout << "dest client: " << dest_ip << ":" << dest_port << std::endl;
+  std::cout << "local port: " << source_port << std::endl;
+  std::cout << "current state: " << getState(state) << std::endl;
+  std::cout << "seq: " << flags.seq << std::endl;
+  std::cout << "ack seq: " << flags.ack_seq << std::endl;
+  std::cout << "flags:" << (flags.fin ? " FIN" : "")
+                        << (flags.syn ? " SYN" : "")
+                        << (flags.rst ? " RST" : "")
+                        << (flags.psh ? " PSH" : "")
+                        << (flags.ack ? " ACK" : "")
+                        << std::endl;
+  std::cout << "data: " << data << std::endl;
+  std::cout << "=============================" << std::endl;
+
+  #endif
+
   // remenber flags and data to resend
   last_flags = flags;
   last_data = data;
@@ -183,6 +230,24 @@ int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
  */
 void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
+  #ifdef DEBUG
+
+  std::cout << "===== tcp receive datagram =====" << std::endl;
+  std::cout << "remote client: " << dest_ip << ":" << dest_port << std::endl;
+  std::cout << "local port: " << source_port << std::endl;
+  std::cout << "current state: " << getState(state) << std::endl;
+  std::cout << "seq: " << flags.seq << std::endl;
+  std::cout << "ack seq: " << flags.ack_seq << std::endl;
+  std::cout << "flags:" << (flags.fin ? " FIN" : "")
+                        << (flags.syn ? " SYN" : "")
+                        << (flags.rst ? " RST" : "")
+                        << (flags.psh ? " PSH" : "")
+                        << (flags.ack ? " ACK" : "")
+                        << std::endl;
+  std::cout << "data: " << data << std::endl;
+
+  #endif
+
   switch (state) {
     case CLOSED:
       // 已关闭连接, 无事件响应
@@ -196,7 +261,23 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         state = SYN_RCVD;
 
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
         send(flags, "");
+
+      #ifdef DEBUG
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
     case SYN_SENT:
@@ -208,7 +289,23 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         state = ESTABLISHED;
 
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
         send(flags, "");
+
+      #ifdef DEBUG
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
     case SYN_RCVD:
@@ -216,6 +313,18 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         last_seq = flags.seq;
         state = ESTABLISHED;
+
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
     case ESTABLISHED:
@@ -226,6 +335,13 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
         last_seq = ++flags.seq;
         flags.psh = false;
         flags.ack = true;
+
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
 
         send(flags, "");
         for (auto it = listeners.begin(); it != listeners.end(); ++it) {
@@ -238,7 +354,23 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         state = FIN_RCVD;
 
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
         send(flags, "");
+
+      #ifdef DEBUG
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
     case FIN_SENT:
@@ -250,7 +382,23 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
 
         state = CLOSED;
 
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
         send(flags, "");
+
+      #ifdef DEBUG
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
     case FIN_RCVD:
@@ -258,6 +406,18 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         last_seq = flags.seq;
         state = CLOSED;
+
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
     case WAIT_ACK:
@@ -265,6 +425,18 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         last_seq = flags.seq;
         state = ESTABLISHED;
+
+        #ifdef DEBUG
+
+        std::cout << "goto state: " << getState(state) << std::endl;
+        std::cout << "================================" << std::endl;
+
+      } else {
+        std::cout << "[DATAGRAM IGNORED]" << std::endl;
+        std::cout << "================================" << std::endl;
+
+      #endif
+
       }
       break;
   }
@@ -424,9 +596,13 @@ void slip::Tcp::receive_loop() {
           }
         }
 
+      #ifdef DEBUG
+
       } else {
-        // valid checksum
         std::cout << "invalid checksum" << std::endl;
+
+      #endif
+
       }
     }
   }

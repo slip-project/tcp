@@ -12,9 +12,14 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#define DEBUG
 #define DATAGRAM_MAX_LEN 4096
 
+#ifdef DEBUG
+
 #include <iostream>
+
+#endif
 
 slip::Udp::Udp() {
   _finish = false;
@@ -41,6 +46,17 @@ slip::Udp::~Udp() {
    * @return             [调用系统默认的sendto函数的返回值]
    */
 int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned short source_port, std::string data) {
+
+  #ifdef DEBUG
+
+  std::cout << "===== udp send datagram =====" << std::endl;
+  std::cout << "remote client: " << dest_ip << ":" << dest_port << std::endl;
+  std::cout << "local port: " << source_port << std::endl;
+  std::cout << "data: " << data << std::endl;
+  std::cout << "=============================" << std::endl;
+
+  #endif
+
   //Datagram to represent the packet
   char datagram[DATAGRAM_MAX_LEN], *payload;
   std::string source_ip = slip::get_local_ip();
@@ -175,14 +191,29 @@ void slip::Udp::receive_loop() {
 
         #endif
 
+        #ifdef DEBUG
+
+        std::cout << "===== udp receive datagram =====" << std::endl;
+        std::cout << "remote client: " << source_ip << ":" << source_port << std::endl;
+        std::cout << "local port: " << dest_port << std::endl;
+        std::cout << "data: " << data_str << std::endl;
+        std::cout << "================================" << std::endl;
+
+        #endif
+
         if (_table.find(dest_port) != _table.end()) {
           for (auto it = _table[dest_port].begin(); it != _table[dest_port].end(); ++it) {
             (*it)(source_ip, source_port, data_str);
           }
         }
 
+      #ifdef DEBUG
+
       } else {
         std::cout << "invalid checksum" << std::endl;
+
+      #endif
+
       }
     }
   }
