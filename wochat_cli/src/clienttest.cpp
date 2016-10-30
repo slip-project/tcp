@@ -2,6 +2,7 @@
 #include "tcp.hpp"
 #include "utils.hpp"
 #include <cstdio>
+#include <time.h>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -25,8 +26,12 @@ void printMenu(bool loginStatus) {
 		cout << "list	-	LIST all Online users." << endl;
 		cout << "send	-	SEND a message to the current user." << endl;
 		cout << "pull	-	PULL your message from the server." << endl;
+		cout << "help	-	Print Again This help." << endl;
+		cout << "exit 	-	Logout and Exit the Wochat." << endl;
 	} else {
 		cout << "login	-	LOGIN the WoChat." << endl;
+		cout << "help	-	Print Again This Help." << endl;
+		cout << "exit	-	Exit the Wochat." << endl;
 	}
 	cout << "-------------------------------------------------------" << endl;
 	cout << endl;
@@ -34,7 +39,7 @@ void printMenu(bool loginStatus) {
 
 void printChoices(bool loginStatus , std::string& username , std::string& instructions) {
 	if (loginStatus) {
-		cout << "Enter your choice:" << endl;
+		// cout << "Enter your choice:" << endl;
 		cout << username << " >> ";
 		cin >> instructions;
 	} else {
@@ -50,10 +55,14 @@ int main(int argc, char const *argv[]) {
 	// Select Boost up UDP ports
 	if (argc < 2) return 0;
 
+	// srand((unsigned)time(NULL));
 
+	unsigned short udp_send_port = atoi(argv[1]);
+	unsigned short extension_port = 18888;
 
-	unsigned short listen_port = atoi(argv[1]);
-	unsigned short send_port = 18888;
+	// unsigned short send_port = (unsigned short) rand() % 65535;
+	unsigned short tcp_recv_port = (unsigned short) rand() % 65535;
+
 	std::string server_ip = slip::get_local_ip();
 	
 	bool isLogin = false;
@@ -62,7 +71,7 @@ int main(int argc, char const *argv[]) {
 	std::string currentUser = "";
 	std::string userName;
 	slip::Udp udp;
-
+	slip::Tcp tcp;
 
 		/**
 		 * Start a port to listen udp from server
@@ -90,14 +99,15 @@ int main(int argc, char const *argv[]) {
 	
  //    printMenu(isLogin);
 	// printChoices(isLogin , username , instruction);
+	printMenu(isLogin);
+
 	while (1) {
-		printMenu(isLogin);
 		printChoices(isLogin, userName , instruction);
 		if (instruction == "login" && !isLogin) {
 			std::stringstream stream;
-	        stream << "LGIN " << userName << " " << listen_port << endl;
+	        stream << "LGIN " << userName << " " << extension_port << endl;
 	        std::string message = stream.str();
-			udp.send(server_ip , SERVER_PORT , send_port , message);
+			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
 			cout << "Login Successfully! Enjoy :)" << endl;
 			
 			isLogin = true;
@@ -107,7 +117,7 @@ int main(int argc, char const *argv[]) {
 			std::stringstream stream;
 	        stream << "LGOU " << currentUser << endl;
 	        std::string message = stream.str();
-			udp.send(server_ip , SERVER_PORT , send_port , message);
+			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
 
 			cout << currentUser << " Logout Successfully! See you next time :)" << endl;
 
@@ -130,19 +140,80 @@ int main(int argc, char const *argv[]) {
 			stream << "SEND " << userName << " " << tempname << " " << tempcontent << endl;
 			std::string message = stream.str();
 
-			udp.send(server_ip , SERVER_PORT , send_port , message);
+			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
 
 			cout << "BRAVOO! Your Message Has Successfully SENT to Your Buddy!" << endl;
 
+		} else if (instruction == "help") {
+			printMenu(isLogin);
+		} else if (instruction == "exit") {
+			if (isLogin) {
+				std::stringstream stream;
+		        stream << "LGOU " << currentUser << endl;
+		        std::string message = stream.str();
+				udp.send(server_ip , SERVER_PORT , udp_send_port , message);
+			}
+			cout << "See you Next time :)" << endl;
+			break;
+		} else if (instruction == "list") {
+			cout << endl << endl;
+			cout << "Getting List From Server............Done." << endl;
+			cout << "Here are the online Users:" << endl;
+			cout << "-------------------------------------------------------" << endl;
+			
+			/**
+			 * Start TCP Listen daemon
+			 */
+
+			auto pcb = tcp.listen(tcp_recv_port);
+			pcb -> add_listener([](std::string data)-> void {
+				cout << data << endl;
+			});
+
+			 /**
+			  * Tell the Server that he can sent messages.
+			  */
+			std::stringstream stream;
+			stream << "LIST " << tcp_recv_port << endl;
+	        std::string message = stream.str();
+			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
+
+			while (pcb->state != slip::Tcp::CLOSED) {};
+
+			cout << "-------------------------------------------------------" << endl;
+			cout << endl;
+
+		} else if (instruction == "pull") {
+			cout << endl << endl;
+			cout << "Pulling New Messages From Server............Done." << endl;
+			cout << "Here are Your Unread Messages:" << endl;
+			cout << "-------------------------------------------------------" << endl;
+			
+			/**
+			 * Start TCP Listen daemon
+			 */
+
+			auto pcb = tcp.listen(tcp_recv_port);
+			pcb -> add_listener([](std::string data)-> void {
+				cout << data << endl;
+			});
+
+			 /**
+			  * Tell the Server that he can sent messages.
+			  */
+			std::stringstream stream;
+			stream << "PULL " << currentUser << " " << tcp_recv_port << endl;
+	        std::string message = stream.str();
+			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
+
+			while (pcb->state != slip::Tcp::CLOSED) {};
+			
+			cout << "-------------------------------------------------------" << endl;
+			cout << endl;
+		} else {
+			cout << "Error Instruction. Type 'help' for help." << endl;
 		}
 	}
-
-	// while (cin >> instruction) {
-// 
-	// }
-
-
-
 
 
 	return 0;
