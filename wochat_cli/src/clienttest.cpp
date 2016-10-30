@@ -65,7 +65,7 @@ int main(int argc, char const *argv[]) {
 	unsigned short extension_port = 18888;
 
 	// unsigned short send_port = (unsigned short) rand() % 65535;
-	unsigned short tcp_recv_port = (unsigned short) (rand()+321-923%22+udp_send_port*rand()%232) % 65535;
+	unsigned short tcp_recv_port = (unsigned short) (rand()+321-923%22+udp_send_port*rand()%232) % 10000 + 40000;
 
 	std::string server_ip = slip::get_local_ip();
 	
@@ -113,7 +113,7 @@ int main(int argc, char const *argv[]) {
 	        std::string message = stream.str();
 			udp.send(server_ip , SERVER_PORT , udp_send_port , message);
 			cout << "Login Successfully! Enjoy :)" << endl;
-			
+			printMenu(isLogin);
 			isLogin = true;
 			currentUser = userName;
 
