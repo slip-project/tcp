@@ -7,10 +7,14 @@ SRC := ../src
 DEMOSRC := src
 DEMOBIN := bin
 
-all: $(DEMOBIN)/client_test
+all: $(DEMOBIN)/client_test $(DEMOBIN)/server_test
 
 
-$(DEMOBIN)/client_test: $(DEMOBUILD)/clienttest.o $(BUILD)/utils.o $(BUILD)/udp.o
+$(DEMOBIN)/server_test: $(DEMOBUILD)/server.o $(BUILD)/tcp.o $(BUILD)/udp.o $(BUILD)/utils.o 
+	@mkdir -p ./$(DEMOBIN)
+	$(CXX) $(FLAGS) -I $(INCLUDE) -o $@ $^
+
+$(DEMOBIN)/client_test: $(DEMOBUILD)/clienttest.o $(BUILD)/utils.o $(BUILD)/udp.o $(BUILD)/tcp.o
 	@mkdir -p ./$(DEMOBIN)
 	$(CXX) $(FLAGS) -I $(INCLUDE) -o $@ $^
 
