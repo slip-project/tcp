@@ -115,7 +115,7 @@ int main(int argc, char const *argv[]) {
 			userName = "";
 
 		} else if (instruction == "send" && isLogin) {
-			std::string tempname , tempcontent , useless;
+			std::string tempname , tempcontent;
 			std::stringstream stream;
 
 			cout << "Please Input Your Friend\'s Username:" << endl;
@@ -123,7 +123,7 @@ int main(int argc, char const *argv[]) {
 			cin >> tempname;
 			cout << "Please Input the Message and press enter:" << endl;
 			cout << currentUser << " >> ";
-			cin >> useless;
+
 			std::getline(cin , tempcontent);
 
 			stream << "SEND " << userName << " " << tempname << " " << tempcontent << endl;
