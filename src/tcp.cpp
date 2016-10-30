@@ -115,6 +115,18 @@ void slip::Tcp::tcp_pcb::close() {
  */
 int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
 
+  // remenber flags and data to resend
+  last_flags = flags;
+  last_data = data;
+
+  // set timer
+  if (timer->enable) {
+    timer->enable = false;
+  }
+  timer = tcp->_timeout.add_timer(500, [this]()->void{
+    this->send(this->last_flags, this->last_data);
+  });
+
   #ifdef DEBUG
 
   std::cout << "===== tcp send datagram =====" << std::endl;
@@ -133,10 +145,6 @@ int slip::Tcp::tcp_pcb::send(slip::Tcp::tcp_flags flags, std::string data) {
   std::cout << "=============================" << std::endl;
 
   #endif
-
-  // remenber flags and data to resend
-  last_flags = flags;
-  last_data = data;
 
   //Datagram to represent the packet
   char datagram[DATAGRAM_MAX_LEN], *payload;
@@ -309,10 +317,12 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       }
       break;
     case SYN_RCVD:
-      // 接收 ACK, 不发送, 转到 ESTABLISHED
+      // 接收 ACK, 不发送, 转到 ESTABLISHED, 关闭timer
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         last_seq = flags.seq;
         state = ESTABLISHED;
+
+        timer->enable = false;
 
         #ifdef DEBUG
 
@@ -402,10 +412,12 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       }
       break;
     case FIN_RCVD:
-      // 接受 ACK, 不发送, 转到 CLOSED
+      // 接受 ACK, 不发送, 转到 CLOSED, 关闭 timer
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         last_seq = flags.seq;
         state = CLOSED;
+
+        timer->enable = false;
 
         #ifdef DEBUG
 
@@ -421,10 +433,12 @@ void slip::Tcp::tcp_pcb::action(slip::Tcp::tcp_flags flags, std::string data) {
       }
       break;
     case WAIT_ACK:
-      // 接受 ACK, 不发送, 转到 ESTABLISHED
+      // 接受 ACK, 不发送, 转到 ESTABLISHED, 关闭 timer
       if (!flags.fin & !flags.syn & !flags.rst & !flags.psh & flags.ack & (flags.ack_seq == last_seq) & (flags.seq == last_seq + 1)) {
         last_seq = flags.seq;
         state = ESTABLISHED;
+
+        timer->enable = false;
 
         #ifdef DEBUG
 

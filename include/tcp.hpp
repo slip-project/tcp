@@ -8,6 +8,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include "timeout.hpp"
 
 namespace slip {
 
@@ -81,7 +82,7 @@ public:
       unsigned short dest_port, source_port;
       tcp_state state;
       unsigned int last_seq;
-      unsigned int timer;
+      Timeout::timer_pcb_ptr timer;
 
       /**
        * [send 发送数据方法]
@@ -117,7 +118,7 @@ public:
 
       Tcp* tcp;
 
-      
+
 
       /**
        * [send 发送数据方法]
@@ -167,6 +168,7 @@ private:
   std::thread _recive_thread;
   pcb_table _table;
   std::atomic<bool> _finish;
+  Timeout _timeout;
 };
 
 }

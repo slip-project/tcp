@@ -4,7 +4,7 @@ Super Lightweight Internet Protocol Inplementation based on C++.
 
 项目组成员：
 
-* 欧一锋(@a20185)(组长)
+* 欧一锋(@a20185) **(组长)**
 * 王天宇
 * 王毅峰
 * 赵子琳(@SakurazukaKen)

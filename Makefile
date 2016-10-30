@@ -10,7 +10,7 @@ BIN := bin
 all: $(BIN)/udptest $(BIN)/tcptest
 
 
-$(BIN)/tcptest: $(BUILD)/$(TEST)/tcptest.o $(BUILD)/utils.o $(BUILD)/tcp.o
+$(BIN)/tcptest: $(BUILD)/$(TEST)/tcptest.o $(BUILD)/utils.o $(BUILD)/tcp.o $(BUILD)/timeout.o
 	@mkdir -p ./$(BIN)
 	$(CXX) $(FLAGS) -I $(INCLUDE) -o $@ $^
 
