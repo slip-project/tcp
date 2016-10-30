@@ -20,12 +20,12 @@ void printMenu(bool loginStatus) {
 	cout << "You can use the Following Commands:" << endl;
 	cout << "-------------------------------------------------------" << endl;
 	if (loginStatus) {
-		cout << "LOGOUT	-	LOGOUT the WoChat." << endl;
-		cout << "LIST	-	LIST all Online users." << endl;
-		cout << "SEND	-	SEND a message to the current user." << endl;
-		cout << "PULL	-	PULL your message from the server." << endl;
+		cout << "logout	-	LOGOUT the WoChat." << endl;
+		cout << "list	-	LIST all Online users." << endl;
+		cout << "send	-	SEND a message to the current user." << endl;
+		cout << "pull	-	PULL your message from the server." << endl;
 	} else {
-		cout << "LOGIN	-	LOGIN the WoChat." << endl;
+		cout << "login	-	LOGIN the WoChat." << endl;
 	}
 	cout << "-------------------------------------------------------" << endl;
 	cout << endl;
@@ -37,7 +37,7 @@ void printChoices(bool loginStatus , std::string& username , std::string& instru
 		cout << username << " >> ";
 		cin >> instructions;
 	} else {
-		instructions = "LOGIN";
+		instructions = "login";
 		cout << "Please Login first." << endl;
 		cout << "Your Username >> ";
 		cin >> username;
@@ -56,7 +56,7 @@ int main(int argc, char const *argv[]) {
 	std::string server_ip = slip::get_local_ip();
 	
 	bool isLogin = false;
-	bool transact_not_finished = true;
+	// bool transact_not_finished = true;
 	std::string instruction;
 	std::string currentUser = "";
 	std::string userName;
@@ -92,8 +92,7 @@ int main(int argc, char const *argv[]) {
 	while (1) {
 		printMenu(isLogin);
 		printChoices(isLogin, userName , instruction);
-		if (instruction == "LOGIN" && !isLogin) {
-			cin >> userName;
+		if (instruction == "login" && !isLogin) {
 			std::stringstream stream;
 	        stream << "LGIN " << userName << " " << listen_port << endl;
 	        std::string message = stream.str();
@@ -103,14 +102,36 @@ int main(int argc, char const *argv[]) {
 			isLogin = true;
 			currentUser = userName;
 
-		} else if (instruction == "LOGOUT" && isLogin) {
+		} else if (instruction == "logout" && isLogin) {
 			std::stringstream stream;
-	        stream << "LGOU " << userName << " " << endl;
+	        stream << "LGOU " << currentUser << " " << endl;
 	        std::string message = stream.str();
 			udp.send(server_ip , SERVER_PORT , send_port , message);
+
+			cout << currentUser << " Logout Successfully! See you next time :)" << endl;
+
 			isLogin = false;
 			currentUser = "";
 			userName = "";
+
+		} else if (instruction == "send" && isLogin) {
+			std::string tempname , tempcontent;
+			std::stringstream stream;
+
+			cout << "Please Input Your Friend\'s Username:" << endl;
+			cout << currentUser << " >> ";
+			cin >> tempname;
+			cout << "Please Input the Message and press enter:" << endl;
+			cout << currentUser << " >> ";
+			std::getline(cin , tempcontent);
+
+			stream << "SEND " << userName << " " << tempname << " " << tempcontent;
+			std::string message = stream.str();
+
+			udp.send(server_ip , SERVER_PORT , send_port , message);
+
+			cout << "BRAVOO! Your Message Has Successfully SENT to Your Buddy!" << endl;
+
 		}
 	}
 
