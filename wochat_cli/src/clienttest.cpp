@@ -1,6 +1,7 @@
 #include "udp.hpp"
 #include "tcp.hpp"
 #include "utils.hpp"
+#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 #include <sstream>
@@ -123,7 +124,7 @@ int main(int argc, char const *argv[]) {
 			cin >> tempname;
 			cout << "Please Input the Message and press enter:" << endl;
 			cout << currentUser << " >> ";
-
+			fflush(stdin);
 			std::getline(cin , tempcontent);
 
 			stream << "SEND " << userName << " " << tempname << " " << tempcontent << endl;
