@@ -6,7 +6,7 @@ SRC := src
 TEST := test
 BIN := bin
 
-all: $(BIN)/tcptest $(BIN)/udptest
+all: $(BIN)/udptest
 
 
 $(BIN)/tcptest: $(BUILD)/$(TEST)/tcptest.o $(BUILD)/utils.o $(BUILD)/tcp.o
