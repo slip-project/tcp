@@ -31,18 +31,25 @@ slip::Udp::~Udp() {
   close(_socketfd);
 }
 
+
+  /**
+   * [send 数据报文包发送方法]
+   * @param  dest_ip     [目的主机ip地址]
+   * @param  dest_port   [目的主机端口]
+   * @param  source_port [源主机端口]
+   * @param  data        [发送的数据，字符串形式]
+   * @return             [调用系统默认的sendto函数的返回值]
+   */
 int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned short source_port, std::string data) {
   //Datagram to represent the packet
   char datagram[DATAGRAM_MAX_LEN], *payload;
   std::string source_ip = slip::get_local_ip();
-  // std::string source_ip = "127.0.0.1";
 
   //zero out the packet buffer
   memset (datagram, 0, DATAGRAM_MAX_LEN);
 
   //UDP header
   struct udphdr *udph = (struct udphdr *) (datagram);
-
   struct sockaddr_in destaddr, sourceaddr;
 
   //Address config
@@ -56,17 +63,14 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   sourceaddr.sin_port = htons(source_port); // 本机端口
   sourceaddr.sin_addr.s_addr = inet_addr(source_ip.c_str()); // 本机ip
 
-  // socklen_t sourceaddr_len = sizeof(sourceaddr);
 
   //Data part
   unsigned short datagram_len = data.length() + sizeof(struct udphdr);
-  // std::cout << datagram_len << std::endl;
+
   payload = datagram + sizeof(struct udphdr);
   strcpy(payload, data.c_str());
 
-  // std::cout << "send" << std::endl;
-  // std::cout << "source ip: " << inet_ntoa(sourceaddr.sin_addr) << std::endl;
-  // std::cout << "dest ip: " << inet_ntoa(destaddr.sin_addr) << std::endl;
+
 
   #ifdef __APPLE__ // macOS
 
@@ -94,21 +98,34 @@ int slip::Udp::send(std::string dest_ip, unsigned short dest_port, unsigned shor
   return sendto(_socketfd, datagram, datagram_len, 0, (struct sockaddr *) &destaddr, destaddr_len);
 }
 
+
+  /**
+   * [add_listener 添加监听器方法]
+   * @param  port [监听端口]
+   * @param  func [监听函数，测试中用的是lambda形式]
+   * @return      [listener_ptr , 监听器的指针]
+   */
 slip::Udp::listener_ptr slip::Udp::add_listener(unsigned short port, slip::Udp::listener func) {
   _table[port].push_front(func);
   return _table[port].begin();
 }
 
+  /**
+   * [remove_listener 移除监听器方法]
+   * @param  port [监听端口]
+   * @param  ptr  [监听器的指针]
+   * @return      [布尔值，移除操作处理结果]
+   */
 bool slip::Udp::remove_listener(unsigned short port, slip::Udp::listener_ptr ptr) {
   _table[port].erase(ptr);
   return true;
 }
 
+
 void slip::Udp::receive_loop() {
 
   sockaddr_in sourceaddr;
   std::string source_ip = slip::get_local_ip();
-  // std::string source_ip = "127.0.0.1";
 
   sourceaddr.sin_family = AF_INET;
   sourceaddr.sin_addr.s_addr = inet_addr(source_ip.c_str()); // 本机ip
@@ -129,9 +146,6 @@ void slip::Udp::receive_loop() {
       struct udphdr *udph = (struct udphdr *) (datagram + sizeof(struct ip));
       char *data = (char *) (datagram + sizeof(ip) + sizeof(struct udphdr));
 
-      // std::cout << tot_len - sizeof(struct ip) << std::endl;
-      // std::cout << udph->check << std::endl;
-
       #ifdef __APPLE__ // macOS
 
       unsigned short checksum = udph->uh_sum;
@@ -143,11 +157,6 @@ void slip::Udp::receive_loop() {
       #endif
 
       bool verify = slip::verify_checksum(iphd->ip_src.s_addr, iphd->ip_dst.s_addr, IPPROTO_UDP, (char*)udph, tot_len - sizeof(struct ip), checksum);
-
-      // std::cout << "receive" << std::endl;
-      // std::cout << (iphd->ip_src.s_addr) << " " << (iphd->ip_dst.s_addr) << std::endl;
-      // std::cout << inet_ntoa(iphd->ip_src) << " " << inet_ntoa(iphd->ip_dst) << std::endl;
-      // std::cout << "receive checksum: " << checksum << std::endl;
 
       if (verify) {
 
@@ -167,15 +176,12 @@ void slip::Udp::receive_loop() {
         #endif
 
         if (_table.find(dest_port) != _table.end()) {
-
           for (auto it = _table[dest_port].begin(); it != _table[dest_port].end(); ++it) {
             (*it)(source_ip, source_port, data_str);
           }
-
         }
 
       } else {
-        // valid checksum
         std::cout << "invalid checksum" << std::endl;
       }
     }

@@ -7,6 +7,13 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+
+  /**
+   * [csum 校验和计算方法]
+   * @param  ptr    [存放原始数据的short数组]
+   * @param  nbytes [需要计算的字节长度]
+   * @return        [返回一个无符号短整型数 为校验和]
+   */
 unsigned short slip::csum(unsigned short *ptr, int nbytes) {
   long sum;
   unsigned short oddbyte;
@@ -30,25 +37,18 @@ unsigned short slip::csum(unsigned short *ptr, int nbytes) {
   return answer;
 }
 
-// #include <iostream>
 
-// void print(void *buf, int length) {
-//     char *bp = (char *) buf;
-//     for (int i = 0; i < length; ++i) {
-//       int val = bp[i];
-//       std::cout << std::hex << val;
-//     }
-//     std::cout << std::dec << std::endl;
-// }
-
+ /**
+   * [calc_checksum 校验和计算方法]
+   * @param  source_ip   [源主机ip地址]
+   * @param  dest_ip     [目的主机ip地址]
+   * @param  protocol    [8位协议号]
+   * @param  payload     [数据包]
+   * @param  payload_len [数据包长度]
+   * @return             [无符号短整型数，为校验和]
+   */
 unsigned short slip::calc_checksum(unsigned long source_ip, unsigned long dest_ip, u_int8_t protocol,
                              char* payload, unsigned short payload_len) {
-
-  // std::cout << source_ip << std::endl;
-  // std::cout << dest_ip << std::endl;
-  // std::cout << protocol << std::endl;
-  // print(payload, payload_len);
-  // std::cout << payload_len << std::endl;
 
   pseudo_header psh;
 
@@ -67,23 +67,35 @@ unsigned short slip::calc_checksum(unsigned long source_ip, unsigned long dest_i
   unsigned short sum = csum((unsigned short*) pseudogram, psize);
 
   delete [] pseudogram;
-
   return sum;
 }
 
+  /**
+   * [verify_checksum 校验和检查方法]
+   * @param  source_ip   [源主机ip地址]
+   * @param  dest_ip     [目的主机ip地址]
+   * @param  protocol    [8位协议号]
+   * @param  payload     [数据包]
+   * @param  payload_len [数据包长度]
+   * @param  checksum    [传入的初始校验和]
+   * @return             [布尔值，true则表示校验和合法]
+   */
 bool slip::verify_checksum(unsigned long source_ip, unsigned long dest_ip, u_int8_t protocol,
                      char* payload, unsigned short payload_len, unsigned short checksum) {
-
   unsigned short sum = calc_checksum(source_ip, dest_ip, protocol, payload, payload_len);
-
-  // std::cout << "verify_checksum: " << sum << std::endl;
-
   return sum == 0;
 
 }
 
+
 std::string slip::local_ip = "";
 
+
+
+  /**
+   * [get_local_ip 获取本地IP的方法]
+   * @return [本地IP]
+   */
 std::string slip::get_local_ip() {
 
   if (local_ip != "") return local_ip;
