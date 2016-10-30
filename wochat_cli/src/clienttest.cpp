@@ -39,7 +39,7 @@ void printChoices(bool loginStatus , std::string& username , std::string& instru
 	} else {
 		cout << "Please Login first." << endl;
 		cout << "Your Username >> ";
-		cin >> userName;
+		cin >> username;
 	}
 }
 
@@ -64,7 +64,7 @@ int main(int argc, char const *argv[]) {
 
 
 	printMenu(isLogin);
-	printChoices(isLogin, username , instruction);
+	printChoices(isLogin, userName , instruction);
 
 		/**
 		 * Start a port to listen udp from server
