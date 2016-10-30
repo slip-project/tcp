@@ -7,7 +7,11 @@
 #include <stdexcept>
 #include <map>
 #include <queue>
+
 #define DEBUG
+#define SERVER_UDP_PORT 19999
+#define SERVER_TCP_PORT 20000
+
 typedef std::queue<std::string> MessageList;
 typedef std::map<std::string, MessageList>  MessagesMap;
 typedef std::map<std::string, unsigned short> PortMap;
@@ -18,8 +22,11 @@ int main(int argc, char const *argv[]) {
     slip::Tcp tcp;
     MessagesMap message_map;
     PortMap port_map;
-    unsigned short udp_port = atoi(argv[1]);
-    unsigned short tcp_port = atoi(argv[2]);
+    // unsigned short udp_port = atoi(argv[1]);
+    // unsigned short tcp_port = atoi(argv[2]);
+    unsigned short udp_port = (unsigned short) SERVER_UDP_PORT;
+    unsigned short tcp_port = (unsigned short) SERVER_TCP_PORT;
+    
     udp.add_listener(udp_port, [&tcp, &tcp_port, &message_map, &port_map](std::string source_ip, unsigned short source_port, std::string message){
       std::stringstream parser(message);
       std::string cmd;
